@@ -7,11 +7,18 @@ uses
  System.Classes,
  System.ZLib;
 
+// 1.1 - Added toInteger and Length ( original length )
+// 1.0 - First release - Thanks to https://github.com/havrlisan for lots of help and making the debugger visualizer!
+
+Const
+ zStringVersion = 1.1;
+
 type
  zString = record
  strict private
   FCompressedData: TBytes;
   FCompressed: Boolean;
+  FOriginalLength: longint;
   function GetValue: string;
   function GetLength: longint;
   procedure SetValue(const Value: string);
@@ -45,12 +52,15 @@ type
 
   constructor Create(const Value: string);
   procedure Assign(const Value: zString);
+
   function CompressionPercentage: Double;
   function ToDouble: Double;
+  function ToInteger: Integer;
 
   property Value: string read GetValue write SetValue;
   property CompressSize: longint read GetLength;
   property isCompressed: Boolean read FCompressed;
+  property Length: longint read FOriginalLength;
  end;
 
 implementation
@@ -67,8 +77,9 @@ end;
 
 procedure zString.SetValue(const Value: string);
 begin
+ FOriginalLength:= Value.Length;
  FCompressedData := CompressString(Value);
- If length(FCompressedData) > Value.length then
+ If System.Length(FCompressedData) > Value.Length then
  begin
   FCompressedData := TEncoding.Unicode.GetBytes(Value);
   FCompressed := false;
@@ -87,7 +98,7 @@ end;
 
 function zString.GetLength: longint;
 begin
- Result := length(FCompressedData);
+ Result := System.Length(FCompressedData);
 end;
 
 class operator zString.Implicit(const Value: string): zString;
@@ -190,13 +201,18 @@ begin
  Result := StrToFloat(GetValue);
 end;
 
+function zString.ToInteger: Integer;
+begin
+ Result := StrToInt(GetValue);
+end;
+
 function zString.CompressionPercentage: Double;
 var
- OriginalSize: Integer;
- CompressedSize: Integer;
+ OriginalSize: integer;
+ CompressedSize: integer;
 begin
- OriginalSize := length(GetValue);
- CompressedSize := length(FCompressedData);
+ OriginalSize := System.Length(GetValue);
+ CompressedSize := System.Length(FCompressedData);
  if OriginalSize = 0 then
   Exit(0.0);
  Result := ((OriginalSize - CompressedSize) / OriginalSize) * 100;
